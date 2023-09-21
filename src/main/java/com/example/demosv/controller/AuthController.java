@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -66,11 +68,25 @@ public class AuthController {
         user.setEmail(signUpDto.getEmail());
         user.setPassword(passwordEncoder.encode(signUpDto.getPassword()));
 
-        Role roles = roleRepository.findByName("ROLE_ADMIN").get();
-        user.setRoles(Collections.singleton(roles));
+//        Role roles = roleRepository.findByName("ROLE_ADMIN").get();
+//        user.setRoles(Collections.singleton(roles));
+//
+//        userRepository.save(user);
+        Set<Role> userRoles = new HashSet<>();
+        for (String roleName : signUpDto.getRoles()) {
+            // Check if the role is "ROLE_USER" or "ROLE_CTV"
+            if (roleName.equalsIgnoreCase("ROLE_USER") || roleName.equalsIgnoreCase("ROLE_CTV")) {
+                Role role = roleRepository.findByName(roleName).orElse(null);
+                if (role != null) {
+                    userRoles.add(role);
+                }
+            } else {
+                return new ResponseEntity<>("Invalid role selected!", HttpStatus.BAD_REQUEST);
+            }
+        }
 
+        user.setRoles(userRoles);
         userRepository.save(user);
-
         return new ResponseEntity<>("User registered successfully", HttpStatus.OK);
 
     }
